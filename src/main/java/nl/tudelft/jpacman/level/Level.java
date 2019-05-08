@@ -238,15 +238,7 @@ public class Level {
         }
     }
 
-    /**
-     * Resets this level, putting all NPCs back and also the Pac-person back, refill the board and set score to 0.
-     */
-    public void reset() {
-        synchronized (startStopLock) {
 
-
-        }
-    }
 
     /**
      * Starts all NPC movement scheduling.

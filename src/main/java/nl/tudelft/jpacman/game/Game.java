@@ -25,8 +25,15 @@ public abstract class Game implements LevelObserver {
      */
     private final Object progressLock = new Object();
 
+    /**
+     * Store the launcher to access it when resetting.
+     */
     protected Launcher launcher;
 
+    /**
+     * Access the launcher stored.
+     * @return The upper-class Launcher
+     */
     private Launcher getLauncher(){return launcher;}
 
     /**

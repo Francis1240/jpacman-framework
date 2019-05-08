@@ -120,6 +120,11 @@ public class MapParser {
                 grid[x][y] = pelletSquare;
                 levelCreator.createPellet().occupy(pelletSquare);
                 break;
+            case 'A':
+                Square appleSquare = boardCreator.createGround();
+                grid[x][y] = appleSquare;
+                levelCreator.createPellet(1000).occupy(appleSquare);
+                break;
             case 'G':
                 Square ghostSquare = makeGhostSquare(ghosts, levelCreator.createGhost());
                 grid[x][y] = ghostSquare;

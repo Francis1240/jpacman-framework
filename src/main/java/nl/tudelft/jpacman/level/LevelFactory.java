@@ -103,6 +103,17 @@ public class LevelFactory {
     }
 
     /**
+     * Creates a new pellet, with assigned value and apple sprite.
+     *
+     * @param value
+     * The value assigned to this power-pellet.
+     *
+     * @return The new pellet.
+     */
+    public Pellet createPellet(int value) {
+        return new Pellet(value, sprites.getAppleSprite());
+    }
+    /**
      * Creates a new pellet.
      *
      * @return The new pellet.

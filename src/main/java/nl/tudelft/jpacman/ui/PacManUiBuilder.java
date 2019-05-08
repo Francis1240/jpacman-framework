@@ -71,7 +71,7 @@ public class PacManUiBuilder {
         if (defaultButtons) {
             addStartButton(game);
             addStopButton(game);
-            addResetButton(game);
+            addResetButton(game);// Add the reset button
         }
         return new PacManUI(game, buttons, keyMappings, scoreFormatter);
     }

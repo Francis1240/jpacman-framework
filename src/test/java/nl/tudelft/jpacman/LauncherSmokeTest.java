@@ -1,5 +1,6 @@
 package nl.tudelft.jpacman;
 
+import static java.lang.Thread.sleep;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import nl.tudelft.jpacman.board.Direction;
@@ -72,23 +73,27 @@ public class LauncherSmokeTest {
         game.move(player, Direction.WEST);
         assertThat(player.getScore()).isEqualTo(10);
 
+        // consume the apple
+        game.move(player, Direction.WEST);
+        assertThat(player.getScore()).isEqualTo(1010);
+
         // try to move as far as we can
-        move(game, Direction.EAST, 7);
-        assertThat(player.getScore()).isEqualTo(60);
+        move(game, Direction.EAST, 8);
+        assertThat(player.getScore()).isEqualTo(1060);
 
         // move towards the monsters
         move(game, Direction.NORTH, 6);
-        assertThat(player.getScore()).isEqualTo(120);
+        assertThat(player.getScore()).isEqualTo(1120);
 
         // no more points to earn here.
         move(game, Direction.WEST, 2);
-        assertThat(player.getScore()).isEqualTo(120);
+        assertThat(player.getScore()).isEqualTo(1120);
 
         move(game, Direction.NORTH, 2);
 
         // Sleeping in tests is generally a bad idea.
         // Here we do it just to let the monsters move.
-        Thread.sleep(500L);
+        sleep(500L);
 
         // we're close to monsters, this will get us killed.
         move(game, Direction.WEST, 10);
@@ -97,8 +102,600 @@ public class LauncherSmokeTest {
 
         game.stop();
         assertThat(game.isInProgress()).isFalse();
+
+        /*
+         * Reset the game and start again.
+         */
+        game.reset();
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        game.start();
+        game.move(player, Direction.WEST);
+        assertThat(player.getScore()).isEqualTo(1000);// Eat the apple
+        assertThat(game.isInProgress()).isTrue();
     }
 
+    /**
+     * Test the apple when score == 0
+     */
+
+    @Test
+    void apple0(){
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.start();
+        game.move(player,Direction.WEST);
+        assertThat(player.getScore()).isEqualTo(1000);
+    }
+    /**
+     * Test the apple when score != 0
+     */
+
+    @Test
+    void appleNot0(){
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.start();
+        game.move(player,Direction.EAST);
+        assertThat(player.getScore()).isEqualTo(10);
+        game.move(player,Direction.WEST);
+        game.move(player,Direction.WEST);
+        assertThat(player.getScore()).isEqualTo(1010);
+    }
+
+    /**
+     * Test the reset function when the game did not start.
+     */
+    @Test
+    void resetBefore(){
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.reset();
+        assertThat(player.isAlive()).isTrue();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(game.getLevel().remainingPellets()).isEqualTo(178);
+    }
+
+    /**
+     * Test the reset function when the game is running.
+     */
+    @Test
+    void resetDuring() throws InterruptedException {
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.start();
+        sleep(1000);
+        assertThat(game.isInProgress()).isTrue();
+        game.reset();
+        assertThat(player.isAlive()).isTrue();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(game.getLevel().remainingPellets()).isEqualTo(178);
+    }
+
+    /**
+     * Test the reset function when the game is stopped but not lost/won.
+     */
+    @Test
+    void resetStopped() throws InterruptedException {
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.start();
+        sleep(1000);
+        assertThat(game.isInProgress()).isTrue();
+        game.stop();
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(player.isAlive()).isTrue();
+        game.reset();
+        assertThat(player.isAlive()).isTrue();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(game.getLevel().remainingPellets()).isEqualTo(178);
+    }
+
+    /**
+     * Test the reset function when the game is lost.
+     */
+    @Test
+    void resetLost() throws InterruptedException {
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.start();
+        move(game, Direction.EAST, 6);
+        move(game, Direction.NORTH, 6);
+        move(game, Direction.WEST, 2);
+        move(game, Direction.NORTH, 2);
+        move(game, Direction.WEST, 10);// Run into the ghosts
+
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(player.isAlive()).isFalse();
+        game.reset();
+        assertThat(player.isAlive()).isTrue();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(game.getLevel().remainingPellets()).isEqualTo(178);
+    }
+
+    /**
+     * Test the reset function when the game is won.
+     */
+    @Test
+    void resetWon() throws InterruptedException {
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.start();
+        //Here's the code to go through the whole map
+        {
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.WEST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.NORTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.EAST);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+            game.move(player, Direction.SOUTH);
+
+        }
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(player.isAlive()).isTrue();
+        game.reset();
+        assertThat(player.isAlive()).isTrue();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(game.getLevel().remainingPellets()).isEqualTo(178);
+    }
+
+    /**
+     * Test the reset function when the game is just reset.
+     */
+    @Test
+    void resetTwice() throws InterruptedException {
+        Game game = launcher.getGame();
+        Player player = game.getPlayers().get(0);
+        game.reset();
+        game.reset();
+        assertThat(player.isAlive()).isTrue();
+        assertThat(player.getScore()).isEqualTo(0);
+        assertThat(player.getDirection()).isEqualTo(Direction.EAST);
+        assertThat(game.isInProgress()).isFalse();
+        assertThat(game.getLevel().remainingPellets()).isEqualTo(178);
+    }
     /**
      * Make number of moves in given direction.
      *
