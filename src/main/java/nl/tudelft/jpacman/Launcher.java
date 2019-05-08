@@ -72,7 +72,7 @@ public class Launcher {
     public Game makeGame() {
         GameFactory gf = getGameFactory();
         Level level = makeLevel();
-        game = gf.createSinglePlayerGame(level);
+        game = gf.createSinglePlayerGame(this, level);
         return game;
     }
 

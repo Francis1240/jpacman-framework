@@ -2,6 +2,7 @@ package nl.tudelft.jpacman.game;
 
 import java.util.List;
 
+import nl.tudelft.jpacman.Launcher;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.level.Level;
 import nl.tudelft.jpacman.level.Level.LevelObserver;
@@ -23,6 +24,10 @@ public abstract class Game implements LevelObserver {
      * Object that locks the start and stop methods.
      */
     private final Object progressLock = new Object();
+
+    protected Launcher launcher;
+
+    private Launcher getLauncher(){return launcher;}
 
     /**
      * Creates a new game.
@@ -59,6 +64,18 @@ public abstract class Game implements LevelObserver {
             getLevel().stop();
         }
     }
+    /**
+     * Resets the game.
+     */
+    public void reset() {
+        synchronized (progressLock) {
+            inProgress = false;
+            getLevel().stop();
+            resetLevel(this.getLauncher().makeLevel());
+        }
+    }
+
+
 
     /**
      * @return <code>true</code> iff the game is started and in progress.
@@ -76,6 +93,11 @@ public abstract class Game implements LevelObserver {
      * @return The level currently being played.
      */
     public abstract Level getLevel();
+
+    /**
+     * @return The level currently being played.
+     */
+    public abstract void resetLevel(Level level);
 
     /**
      * Moves the specified player one square in the given direction.

@@ -84,6 +84,12 @@ public class Player extends Unit {
         return score;
     }
 
+
+    /**
+     * Reset the score.
+     */
+    public void resetScore(){this.score = 0; return;}
+
     @Override
     public Sprite getSprite() {
         if (isAlive()) {

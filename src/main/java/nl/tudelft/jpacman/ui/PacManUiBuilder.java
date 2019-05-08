@@ -25,6 +25,11 @@ public class PacManUiBuilder {
     private static final String START_CAPTION = "Start";
 
     /**
+     * Caption for the default reset button.
+     */
+    private static final String RESET_CAPTION = "Reset";
+
+    /**
      * Map of buttons and their actions.
      */
     private final Map<String, Action> buttons;
@@ -66,6 +71,7 @@ public class PacManUiBuilder {
         if (defaultButtons) {
             addStartButton(game);
             addStopButton(game);
+            addResetButton(game);
         }
         return new PacManUI(game, buttons, keyMappings, scoreFormatter);
     }
@@ -81,6 +87,18 @@ public class PacManUiBuilder {
         assert game != null;
 
         buttons.put(STOP_CAPTION, game::stop);
+    }
+    /**
+     * Adds a button with the caption {@value #RESET_CAPTION} that resets the
+     * game.
+     *
+     * @param game
+     *            The game to reset.
+     */
+    private void addResetButton(final Game game) {
+        assert game != null;
+
+        buttons.put(RESET_CAPTION, game::reset);
     }
 
     /**
@@ -132,7 +150,7 @@ public class PacManUiBuilder {
     }
 
     /**
-     * Adds a start and stop button to the UI. The actual actions for these
+     * Adds a start, stop and reset button to the UI. The actual actions for these
      * buttons will be added upon building the UI.
      *
      * @return The builder.
@@ -141,6 +159,7 @@ public class PacManUiBuilder {
         defaultButtons = true;
         buttons.put(START_CAPTION, null);
         buttons.put(STOP_CAPTION, null);
+        buttons.put(RESET_CAPTION, null);
         return this;
     }
 

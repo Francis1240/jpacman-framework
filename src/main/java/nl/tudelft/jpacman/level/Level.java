@@ -78,6 +78,15 @@ public class Level {
      */
     private final Set<LevelObserver> observers;
 
+
+    /**
+     * Save the initial state.
+     */
+    private final Board savedBoard;
+    private final List<Ghost> savedGhosts;
+    private final List<Square> savedStartPositions;
+    private final CollisionMap savedCollisionMap;
+
     /**
      * Creates a new level for the board.
      *
@@ -95,6 +104,12 @@ public class Level {
         assert board != null;
         assert ghosts != null;
         assert startPositions != null;
+
+        savedBoard = board;
+        savedGhosts = ghosts;
+        savedStartPositions = startPositions;
+        savedCollisionMap = collisionMap;
+
 
         this.board = board;
         this.inProgress = false;
@@ -220,6 +235,16 @@ public class Level {
             }
             stopNPCs();
             inProgress = false;
+        }
+    }
+
+    /**
+     * Resets this level, putting all NPCs back and also the Pac-person back, refill the board and set score to 0.
+     */
+    public void reset() {
+        synchronized (startStopLock) {
+
+
         }
     }
 
